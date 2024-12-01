@@ -109,14 +109,14 @@ public final class BlockListener extends InteractionListener implements Listener
             }
             if (!canInteract) {
                 shouldCancel = true;
-                if (!hasNotifyPermission) {
+                /*if (!hasNotifyPermission) {
                     BoltComponents.sendMessage(
                             player,
                             Translation.LOCKED,
                             plugin.isUseActionBar(),
                             Placeholder.component(Translation.Placeholder.PROTECTION, Protections.displayType(protection, player))
                     );
-                }
+                }*/
             }
             if (plugin.isDoors() && canInteract) {
                 Doors.handlePlayerInteract(plugin, e);
@@ -259,7 +259,7 @@ public final class BlockListener extends InteractionListener implements Listener
                     }
                 }
                 plugin.removeProtection(protection);
-                if (!plugin.player(player.getUniqueId()).hasMode(Mode.NOSPAM)) {
+                /*if (!plugin.player(player.getUniqueId()).hasMode(Mode.NOSPAM)) {
                     BoltComponents.sendMessage(
                             player,
                             Translation.CLICK_UNLOCKED,
@@ -267,7 +267,7 @@ public final class BlockListener extends InteractionListener implements Listener
                             Placeholder.component(Translation.Placeholder.PROTECTION_TYPE, Protections.protectionType(protection, player)),
                             Placeholder.component(Translation.Placeholder.PROTECTION, Protections.displayType(protection, player))
                     );
-                }
+                }*/
             }
         } else {
             e.setCancelled(true);
