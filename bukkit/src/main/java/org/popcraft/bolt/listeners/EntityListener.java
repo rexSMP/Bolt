@@ -5,47 +5,17 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Tag;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.ItemFrame;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
-import org.bukkit.entity.Projectile;
+import org.bukkit.entity.*;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockShearEntityEvent;
-import org.bukkit.event.entity.AreaEffectCloudApplyEvent;
-import org.bukkit.event.entity.CreatureSpawnEvent;
-import org.bukkit.event.entity.EntityBreakDoorEvent;
-import org.bukkit.event.entity.EntityChangeBlockEvent;
-import org.bukkit.event.entity.EntityCombustByBlockEvent;
-import org.bukkit.event.entity.EntityCombustByEntityEvent;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityDeathEvent;
-import org.bukkit.event.entity.EntityInteractEvent;
-import org.bukkit.event.entity.EntityMountEvent;
-import org.bukkit.event.entity.EntityPlaceEvent;
-import org.bukkit.event.entity.EntityTargetEvent;
-import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
-import org.bukkit.event.entity.EntityTransformEvent;
-import org.bukkit.event.entity.EntityUnleashEvent;
-import org.bukkit.event.entity.ExplosionPrimeEvent;
-import org.bukkit.event.entity.PlayerLeashEntityEvent;
-import org.bukkit.event.entity.PotionSplashEvent;
-import org.bukkit.event.entity.ProjectileHitEvent;
-import org.bukkit.event.entity.SheepDyeWoolEvent;
+import org.bukkit.event.entity.*;
 import org.bukkit.event.hanging.HangingBreakByEntityEvent;
 import org.bukkit.event.hanging.HangingBreakEvent;
 import org.bukkit.event.hanging.HangingPlaceEvent;
-import org.bukkit.event.player.PlayerArmorStandManipulateEvent;
-import org.bukkit.event.player.PlayerBucketEntityEvent;
-import org.bukkit.event.player.PlayerInteractAtEntityEvent;
-import org.bukkit.event.player.PlayerInteractEntityEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerShearEntityEvent;
-import org.bukkit.event.player.PlayerUnleashEntityEvent;
+import org.bukkit.event.player.*;
 import org.bukkit.event.vehicle.VehicleDamageEvent;
 import org.bukkit.event.vehicle.VehicleDestroyEvent;
 import org.bukkit.event.vehicle.VehicleEnterEvent;
@@ -59,20 +29,9 @@ import org.popcraft.bolt.source.Source;
 import org.popcraft.bolt.source.SourceResolver;
 import org.popcraft.bolt.source.SourceTypeResolver;
 import org.popcraft.bolt.source.SourceTypes;
-import org.popcraft.bolt.util.BoltComponents;
-import org.popcraft.bolt.util.BoltPlayer;
-import org.popcraft.bolt.util.Mode;
-import org.popcraft.bolt.util.Permission;
-import org.popcraft.bolt.util.Profiles;
-import org.popcraft.bolt.util.ProtectableConfig;
-import org.popcraft.bolt.util.Protections;
-import org.popcraft.bolt.util.SchedulerUtil;
+import org.popcraft.bolt.util.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 import static org.popcraft.bolt.util.BoltComponents.translateRaw;
 
@@ -219,6 +178,10 @@ public final class EntityListener extends InteractionListener implements Listene
 
     @EventHandler
     public void onHangingBreakByEntity(final HangingBreakByEntityEvent e) {
+        if (e.isCancelled()) {
+            return;
+        }
+
         final Entity entity = e.getEntity();
         if (getDamagerSource(e.getRemover()) instanceof final Player player) {
             if (handlePlayerEntityInteraction(player, entity, Permission.DESTROY, true)) {
