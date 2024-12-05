@@ -174,7 +174,7 @@ public final class EntityListener extends InteractionListener implements Listene
             return;
         }
         plugin.removeProtection(protection);
-        if (e.getEntity().getLastDamageCause() instanceof EntityDamageByEntityEvent entityDamageByEntityEvent && getDamagerSource(entityDamageByEntityEvent.getDamager()) instanceof final Player player && plugin.canAccess(protection, player, Permission.DESTROY)) {
+        /*if (e.getEntity().getLastDamageCause() instanceof EntityDamageByEntityEvent entityDamageByEntityEvent && getDamagerSource(entityDamageByEntityEvent.getDamager()) instanceof final Player player && plugin.canAccess(protection, player, Permission.DESTROY)) {
             BoltComponents.sendMessage(
                     player,
                     Translation.CLICK_UNLOCKED,
@@ -182,7 +182,7 @@ public final class EntityListener extends InteractionListener implements Listene
                     Placeholder.component(Translation.Placeholder.PROTECTION_TYPE, Protections.protectionType(protection, player)),
                     Placeholder.component(Translation.Placeholder.PROTECTION, Protections.displayType(protection, player))
             );
-        }
+        }*/
     }
 
     @EventHandler
@@ -229,7 +229,7 @@ public final class EntityListener extends InteractionListener implements Listene
                     return;
                 }
                 plugin.removeProtection(protection);
-                if (plugin.canAccess(protection, player, Permission.DESTROY)) {
+                /*if (plugin.canAccess(protection, player, Permission.DESTROY)) {
                     BoltComponents.sendMessage(
                             player,
                             Translation.CLICK_UNLOCKED,
@@ -237,7 +237,7 @@ public final class EntityListener extends InteractionListener implements Listene
                             Placeholder.component(Translation.Placeholder.PROTECTION_TYPE, Protections.protectionType(protection, player)),
                             Placeholder.component(Translation.Placeholder.PROTECTION, Protections.displayType(protection, player))
                     );
-                }
+                }*/
             }
         } else if (plugin.isProtected(entity)) {
             e.setCancelled(true);
