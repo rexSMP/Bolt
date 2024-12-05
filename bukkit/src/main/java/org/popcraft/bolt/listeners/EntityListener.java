@@ -229,17 +229,17 @@ public final class EntityListener extends InteractionListener implements Listene
                 protection.setAccessed(System.currentTimeMillis());
                 plugin.saveProtection(entityProtection);
             }
-            /*if (!canAccess) {
+            if (!canAccess) {
                 shouldCancel = true;
-                if (shouldSendMessage && !hasNotifyPermission) {
+                /*if (shouldSendMessage && !hasNotifyPermission) {
                     BoltComponents.sendMessage(
                             player,
                             Translation.LOCKED,
                             plugin.isUseActionBar(),
                             Placeholder.component(Translation.Placeholder.PROTECTION, Protections.displayType(protection, player))
                     );
-                }
-            }*/
+                }*/
+            }
             if (shouldSendMessage && hasNotifyPermission) {
                 Profiles.findOrLookupProfileByUniqueId(protection.getOwner()).thenAccept(profile -> {
                     final boolean noSpam = plugin.player(player.getUniqueId()).hasMode(Mode.NOSPAM);
