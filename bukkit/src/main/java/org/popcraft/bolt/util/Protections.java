@@ -19,14 +19,11 @@ import org.popcraft.bolt.protection.BlockProtection;
 import org.popcraft.bolt.protection.EntityProtection;
 import org.popcraft.bolt.protection.Protection;
 import org.popcraft.bolt.source.Source;
-import org.popcraft.bolt.source.SourceTypes;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
 
 import static org.popcraft.bolt.lang.Translator.isTranslatable;
 import static org.popcraft.bolt.util.BoltComponents.getLocaleOf;
@@ -108,7 +105,7 @@ public final class Protections {
         if (!blockTranslationKey.equals(blockTranslation)) {
             return Component.text(blockTranslation);
         }
-        return Component.translatable(material.getTranslationKey());
+        return Component.translatable(material);
     }
 
     public static Component displayType(final Entity entity, final CommandSender sender) {
@@ -122,7 +119,7 @@ public final class Protections {
         if (!entityTranslationKey.equals(entityTranslation)) {
             return Component.text(entityTranslation);
         }
-        return Component.translatable(entityType.getTranslationKey());
+        return Component.translatable(entityType);
     }
 
     public static Component accessList(final Map<String, String> accessMap, final CommandSender sender) {
@@ -130,23 +127,17 @@ public final class Protections {
             return Component.empty();
         }
         final List<Component> list = new ArrayList<>();
-        final List<String> lines = new ArrayList<>();
         for (final Map.Entry<String, String> accessEntry : accessMap.entrySet()) {
             final String entry = accessEntry.getKey();
             final String access = accessEntry.getValue();
             final Source source = Source.parse(entry);
+            final BoltPlugin plugin = JavaPlugin.getPlugin(BoltPlugin.class);
             final String subject;
-            if (SourceTypes.PLAYER.equals(source.getType())) {
-                final String playerUuid = source.getIdentifier();
-                final UUID uuid = UUID.fromString(playerUuid);
-                final String playerName = Profiles.findProfileByUniqueId(uuid).name();
-                subject = Optional.ofNullable(playerName).orElse(playerUuid);
-            } else if (SourceTypes.PASSWORD.equals(source.getType()) || source.getType().equals(source.getIdentifier())) {
+            if (source.getType().equals(source.getIdentifier())) {
                 subject = Strings.toTitleCase(source.getType());
             } else {
-                subject = source.getIdentifier();
+                subject = plugin.getSourceTransformer(source.getType()).unTransformIdentifier(source.getIdentifier());
             }
-            final BoltPlugin plugin = JavaPlugin.getPlugin(BoltPlugin.class);
             if (plugin.getDefaultAccessType().equals(access)) {
                 list.add(resolveTranslation(
                         Translation.ACCESS_LIST_ENTRY_DEFAULT,

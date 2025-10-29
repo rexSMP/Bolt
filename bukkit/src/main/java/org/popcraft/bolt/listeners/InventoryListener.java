@@ -1,12 +1,17 @@
 package org.popcraft.bolt.listeners;
 
+import com.destroystokyo.paper.event.block.AnvilDamagedEvent;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Tag;
 import org.bukkit.block.Block;
 import org.bukkit.block.DoubleChest;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -27,28 +32,47 @@ import org.popcraft.bolt.source.SourceResolver;
 import org.popcraft.bolt.source.SourceTypeResolver;
 import org.popcraft.bolt.source.SourceTypes;
 import org.popcraft.bolt.util.BoltPlayer;
+import org.popcraft.bolt.util.EnumUtil;
 import org.popcraft.bolt.util.Permission;
 
-import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public final class InventoryListener implements Listener {
     private static final SourceResolver BLOCK_SOURCE_RESOLVER = new SourceTypeResolver(Source.of(SourceTypes.BLOCK));
     private static final SourceResolver REDSTONE_SOURCE_RESOLVER = new SourceTypeResolver(Source.of(SourceTypes.REDSTONE));
+    private static final Tag<Material> COPPER_CHESTS = Bukkit.getTag(Tag.REGISTRY_BLOCKS, NamespacedKey.minecraft("copper_chests"), Material.class);
     @SuppressWarnings("UnstableApiUsage")
-    private static final Map<InventoryType, EnumSet<Material>> INVENTORY_TYPE_BLOCKS = Map.ofEntries(
-            Map.entry(InventoryType.ANVIL, EnumSet.of(Material.ANVIL, Material.CHIPPED_ANVIL, Material.DAMAGED_ANVIL)),
-            Map.entry(InventoryType.BARREL, EnumSet.of(Material.BARREL)),
-            Map.entry(InventoryType.BLAST_FURNACE, EnumSet.of(Material.BLAST_FURNACE)),
-            Map.entry(InventoryType.CHEST, EnumSet.of(Material.CHEST, Material.TRAPPED_CHEST)),
-            Map.entry(InventoryType.CRAFTER, EnumSet.of(Material.CRAFTER)),
-            Map.entry(InventoryType.DISPENSER, EnumSet.of(Material.DISPENSER)),
-            Map.entry(InventoryType.DROPPER, EnumSet.of(Material.DROPPER)),
-            Map.entry(InventoryType.FURNACE, EnumSet.of(Material.FURNACE)),
-            Map.entry(InventoryType.HOPPER, EnumSet.of(Material.HOPPER)),
-            Map.entry(InventoryType.SHULKER_BOX, EnumSet.of(Material.SHULKER_BOX)),
-            Map.entry(InventoryType.SMOKER, EnumSet.of(Material.SMOKER))
+    private static final Map<InventoryType, Set<Material>> INVENTORY_TYPE_BLOCKS = Map.ofEntries(
+            Map.entry(InventoryType.ANVIL, Set.of(Material.ANVIL, Material.CHIPPED_ANVIL, Material.DAMAGED_ANVIL)),
+            Map.entry(InventoryType.BARREL, Set.of(Material.BARREL)),
+            Map.entry(InventoryType.BLAST_FURNACE, Set.of(Material.BLAST_FURNACE)),
+            Map.entry(InventoryType.CHEST, new HashSet<>(Set.of(Material.CHEST, Material.TRAPPED_CHEST))),
+            Map.entry(InventoryType.CRAFTER, Set.of(Material.CRAFTER)),
+            Map.entry(InventoryType.DISPENSER, Set.of(Material.DISPENSER)),
+            Map.entry(InventoryType.DROPPER, Set.of(Material.DROPPER)),
+            Map.entry(InventoryType.FURNACE, Set.of(Material.FURNACE)),
+            Map.entry(InventoryType.HOPPER, Set.of(Material.HOPPER)),
+            Map.entry(InventoryType.SHULKER_BOX, Set.of(Material.SHULKER_BOX)),
+            Map.entry(InventoryType.SMOKER, Set.of(Material.SMOKER))
     );
+
+    static {
+        // Future: Replace with Tag.COPPER_CHESTS, and merge into map above (and remove new HashMap)
+        if (COPPER_CHESTS != null) {
+            INVENTORY_TYPE_BLOCKS.get(InventoryType.CHEST).addAll(COPPER_CHESTS.getValues());
+        }
+    }
+
+    // These exist only in newer versions of 1.21.4 and only in Paper.
+    private static final InventoryAction PICKUP_FROM_BUNDLE = EnumUtil.valueOf(InventoryAction.class, "PICKUP_FROM_BUNDLE").orElse(null);
+    private static final InventoryAction PICKUP_ALL_INTO_BUNDLE = EnumUtil.valueOf(InventoryAction.class, "PICKUP_ALL_INTO_BUNDLE").orElse(null);
+    private static final InventoryAction PICKUP_SOME_INTO_BUNDLE = EnumUtil.valueOf(InventoryAction.class, "PICKUP_SOME_INTO_BUNDLE").orElse(null);
+    private static final InventoryAction PLACE_FROM_BUNDLE = EnumUtil.valueOf(InventoryAction.class, "PLACE_FROM_BUNDLE").orElse(null);
+    private static final InventoryAction PLACE_ALL_INTO_BUNDLE = EnumUtil.valueOf(InventoryAction.class, "PLACE_ALL_INTO_BUNDLE").orElse(null);
+    private static final InventoryAction PLACE_SOME_INTO_BUNDLE = EnumUtil.valueOf(InventoryAction.class, "PLACE_SOME_INTO_BUNDLE").orElse(null);
+
     private final BoltPlugin plugin;
 
     public InventoryListener(final BoltPlugin plugin) {
@@ -114,7 +138,14 @@ public final class InventoryListener implements Listener {
                     yield !plugin.canAccess(protection, player, Permission.WITHDRAW);
                 }
             }
-            default -> true;
+            default -> {
+                if (action == PICKUP_FROM_BUNDLE || action == PICKUP_ALL_INTO_BUNDLE || action == PICKUP_SOME_INTO_BUNDLE) {
+                    yield !plugin.canAccess(protection, player, Permission.WITHDRAW);
+                } else if (action == PLACE_FROM_BUNDLE || action == PLACE_ALL_INTO_BUNDLE || action == PLACE_SOME_INTO_BUNDLE) {
+                    yield !plugin.canAccess(protection, player, Permission.DEPOSIT);
+                }
+                yield true;
+            }
         };
         if (shouldCancel) {
             e.setCancelled(true);
@@ -173,7 +204,11 @@ public final class InventoryListener implements Listener {
         }
     }
 
-    public void onAnvilBreak(final InventoryEvent e) {
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
+    public void onAnvilDamaged(final AnvilDamagedEvent e) {
+        if (!e.isBreaking()) {
+            return;
+        }
         final Protection anvilProtection = getInventoryProtection(e.getInventory());
         if (anvilProtection == null) {
             return;
@@ -183,7 +218,7 @@ public final class InventoryListener implements Listener {
 
     private Protection getInventoryProtection(final Inventory inventory) {
         final InventoryType inventoryType = inventory.getType();
-        final EnumSet<Material> blockTypes = INVENTORY_TYPE_BLOCKS.get(inventoryType);
+        final Set<Material> blockTypes = INVENTORY_TYPE_BLOCKS.get(inventoryType);
         if (blockTypes != null) {
             final Location inventoryLocation = inventory.getLocation();
             if (inventoryLocation != null) {

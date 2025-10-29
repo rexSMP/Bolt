@@ -1,14 +1,11 @@
 package org.popcraft.bolt.util;
 
-import net.kyori.adventure.platform.bukkit.BukkitAudiences;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
-import org.popcraft.bolt.lang.Translator;
 
 import java.util.Locale;
 
@@ -16,40 +13,38 @@ import static org.popcraft.bolt.lang.Translator.translate;
 
 public final class BoltComponents {
     private static MiniMessage miniMessage;
-    private static BukkitAudiences adventure;
 
     private BoltComponents() {
     }
 
-    public static void enable(final Plugin plugin) {
-        if (adventure == null) {
-            adventure = BukkitAudiences.create(plugin);
-            miniMessage = MiniMessage.miniMessage();
-        }
+    public static void enable() {
+        miniMessage = MiniMessage.miniMessage();
     }
 
     public static void disable() {
-        if (adventure != null) {
-            adventure.close();
-            adventure = null;
-            miniMessage = null;
+        miniMessage = null;
+    }
+
+    private static void sendMessage(final CommandSender sender, final Component component) {
+        if (!component.equals(Component.empty())) {
+            sender.sendMessage(component);
         }
     }
 
     public static void sendMessage(final CommandSender sender, String key, TagResolver... placeholders) {
-        adventure.sender(sender).sendMessage(resolveTranslation(key, sender, placeholders));
+        sendMessage(sender, resolveTranslation(key, sender, placeholders));
     }
 
     public static void sendMessage(final CommandSender sender, String key, boolean actionBar, TagResolver... placeholders) {
         if (actionBar) {
-            adventure.sender(sender).sendActionBar(resolveTranslation(key, sender, placeholders));
+            sender.sendActionBar(resolveTranslation(key, sender, placeholders));
         } else {
-            adventure.sender(sender).sendMessage(resolveTranslation(key, sender, placeholders));
+            sendMessage(sender, resolveTranslation(key, sender, placeholders));
         }
     }
 
     public static void sendClickableMessage(final CommandSender sender, String key, ClickEvent clickEvent, TagResolver... placeholders) {
-        adventure.sender(sender).sendMessage(resolveTranslation(key, sender, placeholders).clickEvent(clickEvent));
+        sendMessage(sender, resolveTranslation(key, sender, placeholders).clickEvent(clickEvent));
     }
 
     public static Component resolveTranslation(final String key, final CommandSender sender, TagResolver... placeholders) {
@@ -77,9 +72,9 @@ public final class BoltComponents {
      */
     public static Locale getLocaleOf(CommandSender sender) {
         if (sender instanceof Player player) {
-            return Translator.parseLocale(player.getLocale());
+            return player.locale();
         } else {
-            return new Locale("");
+            return Locale.ROOT;
         }
     }
 }

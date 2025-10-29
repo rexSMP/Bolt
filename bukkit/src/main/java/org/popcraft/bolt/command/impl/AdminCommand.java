@@ -12,7 +12,6 @@ import org.popcraft.bolt.protection.EntityProtection;
 import org.popcraft.bolt.protection.Protection;
 import org.popcraft.bolt.util.BoltComponents;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -25,17 +24,20 @@ public class AdminCommand extends BoltCommand {
     public AdminCommand(BoltPlugin plugin) {
         super(plugin);
         SUB_COMMANDS.clear();
-        SUB_COMMANDS.putAll(Map.of(
-                "cleanup", new AdminCleanup(plugin),
-                "convert", new AdminConvertCommand(plugin),
-                "debug", new AdminDebugCommand(plugin),
-                "expire", new AdminExpireCommand(plugin),
-                "find", new AdminFindCommand(plugin),
-                "flush", new AdminFlushCommand(plugin),
-                "purge", new AdminPurgeCommand(plugin),
-                "reload", new AdminReloadCommand(plugin),
-                "report", new AdminReportCommand(plugin),
-                "transfer", new AdminTransferCommand(plugin)
+        SUB_COMMANDS.putAll(Map.ofEntries(
+                Map.entry("cleanup", new AdminCleanup(plugin)),
+                Map.entry("convert", new AdminConvertCommand(plugin)),
+                Map.entry("debug", new AdminDebugCommand(plugin)),
+                Map.entry("expire", new AdminExpireCommand(plugin)),
+                Map.entry("find", new AdminFindCommand(plugin)),
+                Map.entry("flush", new AdminFlushCommand(plugin)),
+                Map.entry("nearby", new AdminNearbyCommand(plugin)),
+                Map.entry("purge", new AdminPurgeCommand(plugin)),
+                Map.entry("reload", new AdminReloadCommand(plugin)),
+                Map.entry("report", new AdminReportCommand(plugin)),
+                Map.entry("storage", new AdminStorageCommand(plugin)),
+                Map.entry("transfer", new AdminTransferCommand(plugin)),
+                Map.entry("trust", new AdminTrustCommand(plugin))
         ));
     }
 
@@ -68,9 +70,14 @@ public class AdminCommand extends BoltCommand {
     public List<String> suggestions(CommandSender sender, Arguments arguments) {
         final String subcommand = arguments.next();
         if (!SUB_COMMANDS.containsKey(subcommand)) {
-            return new ArrayList<>(SUB_COMMANDS.keySet());
+            return SUB_COMMANDS.entrySet().stream()
+                    .filter(i -> sender.hasPermission(COMMAND_PERMISSION_KEY + i.getKey()) && !i.getValue().hidden())
+                    .map(Map.Entry::getKey)
+                    .toList();
+        } else if (SUB_COMMANDS.containsKey(subcommand) && sender.hasPermission(COMMAND_PERMISSION_KEY + subcommand)) {
+            return SUB_COMMANDS.get(subcommand).suggestions(sender, arguments);
         }
-        return SUB_COMMANDS.get(subcommand).suggestions(sender, arguments);
+        return List.of();
     }
 
     @Override
