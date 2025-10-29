@@ -9,6 +9,7 @@ import org.bstats.charts.SimplePie;
 import org.bukkit.Keyed;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 import org.bukkit.Tag;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -57,10 +58,7 @@ import org.popcraft.bolt.listeners.BlockListener;
 import org.popcraft.bolt.listeners.EntityListener;
 import org.popcraft.bolt.listeners.InventoryListener;
 import org.popcraft.bolt.listeners.PlayerListener;
-import org.popcraft.bolt.listeners.adapter.AnvilDamagedListener;
-import org.popcraft.bolt.listeners.adapter.BlockDestroyListener;
-import org.popcraft.bolt.listeners.adapter.BlockPreDispenseListener;
-import org.popcraft.bolt.listeners.adapter.PlayerRecipeBookClickListener;
+import org.popcraft.bolt.listeners.adapter.ItemTransportingEntityValidateTargetEventListener;
 import org.popcraft.bolt.matcher.Match;
 import org.popcraft.bolt.matcher.block.AmethystClusterMatcher;
 import org.popcraft.bolt.matcher.block.BannerMatcher;
@@ -80,7 +78,6 @@ import org.popcraft.bolt.matcher.block.DoorMatcher;
 import org.popcraft.bolt.matcher.block.FarmlandMatcher;
 import org.popcraft.bolt.matcher.block.FireMatcher;
 import org.popcraft.bolt.matcher.block.FrogspawnMatcher;
-import org.popcraft.bolt.matcher.block.GlowLichenMatcher;
 import org.popcraft.bolt.matcher.block.GrassMatcher;
 import org.popcraft.bolt.matcher.block.HangingRootsMatcher;
 import org.popcraft.bolt.matcher.block.HangingSignMatcher;
@@ -92,6 +89,7 @@ import org.popcraft.bolt.matcher.block.LeashKnotMatcher;
 import org.popcraft.bolt.matcher.block.LilyPadMatcher;
 import org.popcraft.bolt.matcher.block.MangrovePropaguleMatcher;
 import org.popcraft.bolt.matcher.block.MossCarpetMatcher;
+import org.popcraft.bolt.matcher.block.MultipleFacingMatcher;
 import org.popcraft.bolt.matcher.block.MushroomMatcher;
 import org.popcraft.bolt.matcher.block.NetherWartMatcher;
 import org.popcraft.bolt.matcher.block.PaintingMatcher;
@@ -106,7 +104,6 @@ import org.popcraft.bolt.matcher.block.SaplingMatcher;
 import org.popcraft.bolt.matcher.block.ScaffoldingMatcher;
 import org.popcraft.bolt.matcher.block.SeaPickleMatcher;
 import org.popcraft.bolt.matcher.block.SignMatcher;
-import org.popcraft.bolt.matcher.block.SkulkVeinMatcher;
 import org.popcraft.bolt.matcher.block.SmallDripleafMatcher;
 import org.popcraft.bolt.matcher.block.SmallFlowerMatcher;
 import org.popcraft.bolt.matcher.block.SnowMatcher;
@@ -118,7 +115,6 @@ import org.popcraft.bolt.matcher.block.TallFlowerMatcher;
 import org.popcraft.bolt.matcher.block.TallGrassMatcher;
 import org.popcraft.bolt.matcher.block.TechnicalPistonMatcher;
 import org.popcraft.bolt.matcher.block.TorchMatcher;
-import org.popcraft.bolt.matcher.block.TrapdoorMatcher;
 import org.popcraft.bolt.matcher.block.TripwireHookMatcher;
 import org.popcraft.bolt.matcher.block.UprootMatcher;
 import org.popcraft.bolt.matcher.block.VineMatcher;
@@ -126,8 +122,12 @@ import org.popcraft.bolt.matcher.entity.EntityMatcher;
 import org.popcraft.bolt.protection.BlockProtection;
 import org.popcraft.bolt.protection.EntityProtection;
 import org.popcraft.bolt.protection.Protection;
+import org.popcraft.bolt.source.GroupSourceTransformer;
+import org.popcraft.bolt.source.PasswordSourceTransformer;
+import org.popcraft.bolt.source.PlayerSourceTransformer;
 import org.popcraft.bolt.source.PlayerSourceResolver;
 import org.popcraft.bolt.source.Source;
+import org.popcraft.bolt.source.SourceTransformer;
 import org.popcraft.bolt.source.SourceResolver;
 import org.popcraft.bolt.source.SourceTypeRegistry;
 import org.popcraft.bolt.source.SourceTypes;
@@ -138,14 +138,12 @@ import org.popcraft.bolt.util.BukkitPlayerResolver;
 import org.popcraft.bolt.util.EnumUtil;
 import org.popcraft.bolt.util.Group;
 import org.popcraft.bolt.util.Mode;
-import org.popcraft.bolt.util.PaperUtil;
 import org.popcraft.bolt.util.ProtectableConfig;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -163,7 +161,7 @@ public class BoltPlugin extends JavaPlugin implements BoltAPI {
     private static final List<BlockMatcher> BLOCK_MATCHERS = List.of(CHEST_MATCHER,
             new BannerMatcher(), new BedMatcher(), new DoorMatcher(), new LeashKnotMatcher(),
             new PressurePlateMatcher(), new RailMatcher(), new SignMatcher(), new SwitchMatcher(),
-            new TrapdoorMatcher(), new CropsMatcher(), new FarmlandMatcher(), new UprootMatcher(),
+            new CropsMatcher(), new FarmlandMatcher(), new UprootMatcher(),
             new BellMatcher(), new TorchMatcher(), new LanternMatcher(), new LadderMatcher(),
             new CocoaMatcher(), new TripwireHookMatcher(), new AmethystClusterMatcher(), new SaplingMatcher(),
             new TechnicalPistonMatcher(), new ItemFrameMatcher(), new PaintingMatcher(), new HangingVineMatcher(),
@@ -173,8 +171,8 @@ public class BoltPlugin extends JavaPlugin implements BoltAPI {
             new ScaffoldingMatcher(), new MossCarpetMatcher(), new MushroomMatcher(), new NetherWartMatcher(),
             new SweetBerryBushMatcher(), new ChorusMatcher(), new GrassMatcher(), new TallGrassMatcher(),
             new DeadBushMatcher(), new HangingRootsMatcher(), new PointedDripstoneMatcher(), new FireMatcher(),
-            new GlowLichenMatcher(), new LilyPadMatcher(), new RepeaterMatcher(), new SporeBlossomMatcher(),
-            new SoulFireMatcher(), new FrogspawnMatcher(), new MangrovePropaguleMatcher(), new SkulkVeinMatcher(),
+            new LilyPadMatcher(), new RepeaterMatcher(), new SporeBlossomMatcher(),
+            new SoulFireMatcher(), new FrogspawnMatcher(), new MangrovePropaguleMatcher(), new MultipleFacingMatcher(),
             new HangingSignMatcher(), new PinkPetalsMatcher());
     private static final List<EntityMatcher> ENTITY_MATCHERS = List.of();
     private static final Source ADMIN_PERMISSION_SOURCE = Source.of(SourceTypes.PERMISSION, "bolt.admin");
@@ -184,12 +182,13 @@ public class BoltPlugin extends JavaPlugin implements BoltAPI {
     private final Map<String, BoltCommand> commands = new HashMap<>();
     private final Path profileCachePath = getDataPath().resolve("profiles");
     private final ProfileCache profileCache = new SimpleProfileCache(profileCachePath);
-    private final Map<Material, ProtectableConfig> protectableBlocks = new EnumMap<>(Material.class);
-    private final Map<EntityType, ProtectableConfig> protectableEntities = new EnumMap<>(EntityType.class);
-    private final Map<Material, Tag<Material>> materialTags = new EnumMap<>(Material.class);
+    private final Map<Material, ProtectableConfig> protectableBlocks = new HashMap<>();
+    private final Map<EntityType, ProtectableConfig> protectableEntities = new HashMap<>();
+    private final Map<Material, Tag<Material>> materialTags = new HashMap<>();
     private final Set<Mode> defaultModes = new HashSet<>();
     private String defaultProtectionType = "private";
     private String defaultAccessType = "normal";
+    private Map<String, SourceTransformer> sourceTransformers = new HashMap<>();
     private boolean useActionBar;
     private boolean doors;
     private boolean doorsOpenIron;
@@ -218,7 +217,7 @@ public class BoltPlugin extends JavaPlugin implements BoltAPI {
         );
         this.bolt = new Bolt(new SimpleProtectionCache(new SQLStore(databaseConfiguration)));
         reload();
-        BoltComponents.enable(this);
+        BoltComponents.enable();
         registerEvents();
         registerCommands();
         this.callbackManager = new CallbackManager(this);
@@ -256,6 +255,7 @@ public class BoltPlugin extends JavaPlugin implements BoltAPI {
         registerAccessSources();
         initializeMatchers();
         loadDefaultModes();
+        registerDefaultSourceTransformers();
     }
 
     private void registerCustomCharts(final Metrics metrics, final SQLStore.Configuration databaseConfiguration) {
@@ -329,7 +329,7 @@ public class BoltPlugin extends JavaPlugin implements BoltAPI {
         protectableBlocks.clear();
         protectableEntities.clear();
         if (DEBUG) {
-            for (final Material material : Material.values()) {
+            for (final Material material : Registry.MATERIAL) {
                 if (material.isBlock()) {
                     protectableBlocks.put(material, new ProtectableConfig(bolt.getAccessRegistry().getProtectionByType(defaultAccessType).orElse(null), false, false));
                 }
@@ -445,19 +445,13 @@ public class BoltPlugin extends JavaPlugin implements BoltAPI {
 
     private void registerEvents() {
         final PluginManager pluginManager = getServer().getPluginManager();
-        final BlockListener blockListener = new BlockListener(this);
-        pluginManager.registerEvents(blockListener, this);
-        if (PaperUtil.isPaper()) {
-            pluginManager.registerEvents(new PlayerRecipeBookClickListener(blockListener::onPlayerRecipeBookClick), this);
-            pluginManager.registerEvents(new BlockPreDispenseListener(blockListener::onBlockPreDispense), this);
-            pluginManager.registerEvents(new BlockDestroyListener(blockListener::onBlockDestroy), this);
+        pluginManager.registerEvents(new BlockListener(this), this);
+        final EntityListener entityListener = new EntityListener(this);
+        pluginManager.registerEvents(entityListener, this);
+        if (ItemTransportingEntityValidateTargetEventListener.canUse()) {
+            pluginManager.registerEvents(new ItemTransportingEntityValidateTargetEventListener(entityListener::onItemTransportingEntityValidateTarget), this);
         }
-        pluginManager.registerEvents(new EntityListener(this), this);
-        final InventoryListener inventoryListener = new InventoryListener(this);
-        pluginManager.registerEvents(inventoryListener, this);
-        if (PaperUtil.isPaper()) {
-            pluginManager.registerEvents(new AnvilDamagedListener(inventoryListener::onAnvilBreak), this);
-        }
+        pluginManager.registerEvents(new InventoryListener(this), this);
         pluginManager.registerEvents(new PlayerListener(this), this);
     }
 
@@ -615,6 +609,10 @@ public class BoltPlugin extends JavaPlugin implements BoltAPI {
     @Override
     public boolean isProtectable(final Block block) {
         return DEBUG || protectableBlocks.containsKey(block.getType());
+    }
+
+    public boolean isProtectable(final Material material) {
+        return DEBUG || protectableBlocks.containsKey(material);
     }
 
     @Override
@@ -898,5 +896,20 @@ public class BoltPlugin extends JavaPlugin implements BoltAPI {
             }
         }
         return null;
+    }
+
+    @Override
+    public void registerSourceTransformer(String sourceType, SourceTransformer sourceTransformer) {
+        this.sourceTransformers.put(sourceType, sourceTransformer);
+    }
+
+    private void registerDefaultSourceTransformers() {
+        this.sourceTransformers.put(SourceTypes.PLAYER, new PlayerSourceTransformer(this));
+        this.sourceTransformers.put(SourceTypes.PASSWORD, new PasswordSourceTransformer());
+        this.sourceTransformers.put(SourceTypes.GROUP, new GroupSourceTransformer(this));
+    }
+
+    public SourceTransformer getSourceTransformer(String type) {
+        return this.sourceTransformers.getOrDefault(type, SourceTransformer.DEFAULT);
     }
 }
